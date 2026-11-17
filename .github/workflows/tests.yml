@@ -4,37 +4,47 @@ on: push
 
 jobs:
   run_tests:
-    name: Linux / Python ${{ matrix.config['python-version'] }} / tox -e ${{ 
-      matrix.config['tox-env'] }}
+    name: Linux / Python ${{ matrix.config['python-version'] }} / tox -e ${{ matrix.config['tox-env'] }}
     runs-on: ${{ matrix.config.platform || 'ubuntu-latest' }}
+
     strategy:
       fail-fast: true
       matrix:
         config:
           # 3.11
-        - {python-version: '3.11', tox-env: security}
-        - {python-version: '3.11', tox-env: type-checking}
-        - {python-version: '3.11', tox-env: py311, max-attempts: 3}
-        - {python-version: '3.11', tox-env: py311-no-ext, max-attempts: 3}
+          - {python-version: '3.11', tox-env: security}
+          - {python-version: '3.11', tox-env: type-checking}
+          - {python-version: '3.11', tox-env: py311, max-attempts: 3}
+          - {python-version: '3.11', tox-env: py311-no-ext, max-attempts: 3}
+
           # 3.12
-        - {python-version: '3.12', tox-env: security}
-        - {python-version: '3.12', tox-env: type-checking}
-        - {python-version: '3.12', tox-env: py312, max-attempts: 3}
-        - {python-version: '3.12', tox-env: py312-no-ext, max-attempts: 3}
+          - {python-version: '3.12', tox-env: security}
+          - {python-version: '3.12', tox-env: type-checking}
+          - {python-version: '3.12', tox-env: py312, max-attempts: 3}
+          - {python-version: '3.12', tox-env: py312-no-ext, max-attempts: 3}
+
           # 3.13
-        - {python-version: '3.13', tox-env: security}
-        - {python-version: '3.13', tox-env: lint}
-        - {python-version: '3.13', tox-env: type-checking}
-        - {python-version: '3.13', tox-env: py313, max-attempts: 3}
-        - {python-version: '3.13', tox-env: py313-no-ext, max-attempts: 3}
+          - {python-version: '3.13', tox-env: security}
+          - {python-version: '3.13', tox-env: lint}
+          - {python-version: '3.13', tox-env: type-checking}
+          - {python-version: '3.13', tox-env: py313, max-attempts: 3}
+          - {python-version: '3.13', tox-env: py313-no-ext, max-attempts: 3}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Run tests
-      uses: sanic-org/simple-tox-action@v1
-      with:
-        python-version: ${{ matrix.config['python-version'] }}
-        tox-env: ${{ matrix.config['tox-env'] }}
-        max-attempts: ${{ matrix.config['max-attempts'] || 1 }}
-        ignore-errors: ${{ matrix.config['ignore-errors'] || false }}
+      # ADDED: Pin Bandit for security environments
+      - name: Pin Bandit version
+        if: matrix.config['tox-env'] == 'security'
+        shell: bash
+        run: |
+          echo "bandit==1.7.5" > "$GITHUB_WORKSPACE/ci-constraints.txt"
+          echo "PIP_CONSTRAINT=$GITHUB_WORKSPACE/ci-constraints.txt" >> "$GITHUB_ENV"
+
+      - name: Run tests
+        uses: sanic-org/simple-tox-action@v1
+        with:
+          python-version: ${{ matrix.config['python-version'] }}
+          tox-env: ${{ matrix.config['tox-env'] }}
+          max-attempts: ${{ matrix.config['max-attempts'] || 1 }}
+          ignore-errors: ${{ matrix.config['ignore-errors'] || false }}
