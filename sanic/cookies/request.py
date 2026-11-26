@@ -8,7 +8,7 @@ from sanic.request.parameters import RequestParameters
 
 
 COOKIE_NAME_RESERVED_CHARS = re.compile(
-    '[\x00-\x1F\x7F-\xFF()<>@,;:\\\\"/[\\]?={} \x09]'
+    '[\x00-\x1f\x7f-\xff()<>@,;:\\\\"/[\\]?={} \x09]'
 )
 OCTAL_PATTERN = re.compile(r"\\[0-3][0-7][0-7]")
 QUOTE_PATTERN = re.compile(r"[\\].")
@@ -125,17 +125,26 @@ class CookieRequestParameters(RequestParameters):
         ```
     """  # noqa: E501
 
+    # Keep track of keys we've already warned about to avoid repeated
+    # deprecation messages flooding logs.
+    _warned_keys = set()
+
     def __getitem__(self, key: str) -> Optional[str]:
-        deprecation(
-            f"You are accessing cookie key '{key}', which is currently in "
-            "compat mode returning a single cookie value. Starting in v24.3 "
-            "accessing a cookie value like this will return a list of values. "
-            "To avoid this behavior and continue accessing a single value, "
-            f"please upgrade from request.cookies['{key}'] to "
-            f"request.cookies.get('{key}'). See more details: "
-            "https://sanic.dev/en/guide/release-notes/v23.3.html#request-cookies",  # noqa
-            24.3,
-        )
+        # Emit the deprecation notice only once per cookie key to reduce
+        # noisy repeated warnings while still informing users.
+        if key not in self._warned_keys:
+            deprecation(
+                f"You are accessing cookie key '{key}', which is currently in "
+                "compat mode returning a single cookie value. Starting in v24.3 "
+                "accessing a cookie value like this will return a list of values. "
+                "To avoid this behavior and continue accessing a single value, "
+                f"please upgrade from request.cookies['{key}'] to "
+                f"request.cookies.get('{key}'). See more details: "
+                "https://sanic.dev/en/guide/release-notes/v23.3.html#request-cookies",  # noqa
+                24.3,
+            )
+            self._warned_keys.add(key)
+
         try:
             value = self._get_prefixed_cookie(key)
         except KeyError:

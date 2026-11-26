@@ -533,4 +533,4 @@ def test_cookie_passthru(app):
 
     assert cookie_jar.get_cookie("two", secure_prefix=True).max_age == 0
     assert len(response.cookies) == 1
-    assert response.cookies["__Host-one"] == "1"
+    assert cookie_jar.get_cookie("one", host_prefix=True).value == "1"

@@ -166,7 +166,8 @@ class CookieJar(dict):
             "https://sanic.dev/en/guide/release-notes/v23.3.html#response-cookies",  # noqa
             24.3,
         )
-        self.delete(key)
+        # Ensure we call the correct deletion method on CookieJar
+        self.delete_cookie(key)
         return super().pop(key, *args, **kwargs)
 
     @property
@@ -183,7 +184,7 @@ class CookieJar(dict):
     def cookie_headers(self) -> Dict[str, str]:  # no cov
         """Deprecated in v24.3"""
         deprecation(
-            "The CookieJar.coookie_headers property has been deprecated "
+            "The CookieJar.cookie_headers property has been deprecated "
             "and will be removed in version 24.3. If you need to check if a "
             "particular cookie key has been set, use CookieJar.has_cookie.",
             24.3,

@@ -149,4 +149,5 @@ def deprecation(message: str, version: float):  # no cov
     if is_atty():
         version_info = f"{Colors.RED}{version_info}"
         message = f"{Colors.YELLOW}{message}{Colors.END}"
-    warn(version_info + message, DeprecationWarning)
+    # Use a stacklevel so the warning points to the caller of deprecation()
+    warn(version_info + message, DeprecationWarning, stacklevel=2)
